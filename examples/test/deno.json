@@ -1,0 +1,6 @@
+{
+    "tasks": {
+        "dev": "deno run -A main.ts",
+        "build": "deno run -A --allow-run dev.ts"
+    }
+}
