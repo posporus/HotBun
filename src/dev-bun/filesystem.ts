@@ -1,9 +1,5 @@
-import { prepareCode } from './prepare.ts'
-import type { Import } from './prepare.ts'
-
 const loadTree = async (entry: string) => {
     const entryDep = loadDependency(entry)
-
 }
 
 const loadDependency = async (file: string) => {

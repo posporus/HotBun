@@ -1,1 +1,1 @@
-import {Application}
+export { Hot } from '../../mod.ts'
