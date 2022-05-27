@@ -29,14 +29,24 @@ export interface CrumbData {
 
 abstract class Crumb {
 
-    constructor({ raw, file }: CrumbData) {
+    constructor(data: CrumbData) {
 
-        this.raw = raw
-        this.file = file
+        this.update(data)
 
         if (!window.crumbs) window.crumbs = new Map()
         window.crumbs.set(this.file, this)
 
+    }
+
+    update ({ raw, file }: CrumbData) {
+        this.raw = raw
+        this.file = file
+        return this
+    }
+
+    send (ws: WebSocket) {
+        const json = JSON.stringify(this.data)
+        ws.send(json)
     }
 
     file!: string
@@ -45,12 +55,12 @@ abstract class Crumb {
     static root: string
 
     public abstract type: 'markup' | 'script' | 'style'
-
-    public abstract eval: () => void
+    //@ts-ignore <only in browser>
+    public abstract eval: (document?: Document) => void
 
     static get = (moduleName: string): Crumb | undefined => {
         const normal = normalizePath(moduleName)
-        console.log('Crumb request', moduleName,normal)
+        console.log('Crumb request', moduleName, normal)
         return window.crumbs.get(normal)
     }
 
@@ -104,13 +114,19 @@ class Markup extends Crumb {
         console.log('Crumb code getter', this.isDeno)
         return replaceScriptTags(this.raw)
     }
-
-    eval = () => {
+    //@ts-ignore
+    eval = (doc?: Document) => {
+        console.log('eval', doc)
+        if (doc) {
+            doc.documentElement.innerHTML=this.code
+            //doc.write(this.code)
+        }
         //evalScripts()
-        this.dependencies.forEach(d=>{
+        this.dependencies.forEach(d => {
             window.Crumb.get(d)?.eval()
         })
     }
+
     /* public get scripts() : string {
         if(this.runtime === 'deno')
 
@@ -140,7 +156,7 @@ class Style extends Crumb {
         return ''
     }
 
-    eval = () => {}
+    eval = () => { }
     /* public get imports() : string {
         return 
     } */

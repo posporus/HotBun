@@ -3,6 +3,7 @@ import { injectScriptIntoHtml } from './injectScriptIntoHtml.ts'
 import { bundle } from './builder.ts'
 import { path } from '../dist.ts'
 import { newCrumbFromFile, loadTree } from './fromFile.ts'
+import { watcher } from './watcher.ts'
 
 class Bun {
     options: Required<Hot.Options>
@@ -41,7 +42,7 @@ class Bun {
         const js = await bundle(tsPath)
 
         const { all } = Crumb
-        const allData = all.map(crumb=>crumb.data)
+        const allData = all.map(crumb => crumb.data)
 
 
 
@@ -56,6 +57,8 @@ class Bun {
         </html>
         `
     }
+
+    watcher = (callback: (crumb?:Crumb) => void) => watcher(this.options.root, callback)
 
 }
 

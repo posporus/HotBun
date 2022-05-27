@@ -1,5 +1,6 @@
 import { esbuild, path } from '../dist.ts'
 import { Crumb, Script, Markup, Style } from './Crumb.ts'
+import { cleanPath } from './cleanPath.ts'
 
 import {
     importStatementRegEx,
@@ -11,9 +12,6 @@ import {
 } from './regex.ts'
 
 const newCrumbFromFile = (file: string) => {
-    console.log('newCrumb', file)
-
-
     //if (findScriptExtensionRegEx.test(file)) 
     if (findMarkupExtensionRegEx.test(file)) return markupCrumpFromFile(file)
     return scriptCrumbFromFile(file)
@@ -56,23 +54,22 @@ const loadTree = (entry: Crumb) => {
     }))
 }
 
-const cleanPath = (file: string) => {
-    const clean = path.normalize(file)
+const updateCrumb = async (file:string) => {
+    const crumb = window.crumbs.get(file)
 
-    console.log('clean path', file, clean)
-
-    const isExtendedLengthPath = /^\\\\\?\\/.test(clean);
-    const hasNonAscii = /[^\u0000-\u0080]+/.test(clean);
-
-    if (isExtendedLengthPath || hasNonAscii) {
-        return clean;
+    console.log('update Crumb:',crumb)
+    if(!crumb) {
+        console.log('new file detected:',file)
+        return newCrumbFromFile(file)
     }
-
-    return clean.replace(/\\/g, "/");
-
+    const raw = await Deno.readTextFile(path.join(Crumb.root, file))
+    const updated = crumb.update({file,raw})
+    return updated
 }
+
 
 export {
     newCrumbFromFile,
-    loadTree
+    loadTree,
+    updateCrumb
 }
