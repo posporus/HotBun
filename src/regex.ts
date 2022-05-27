@@ -10,3 +10,5 @@ export const findMarkupExtensionRegEx = /\.(html|htm)$/g
 export const findScriptExtensionRegEx = /\.(js|ts|jsx|tsx)$/g
 
 export const scriptTagSrcRegEx = /<script.*?src="(.*?)"/gmi
+
+export const scriptTagRegEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi

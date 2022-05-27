@@ -13,49 +13,22 @@ class Bun {
             ...options
         }
 
+        Crumb.root = this.options.root
+
     }
 
     static async init (options?: Hot.Options) {
 
 
         const bun = new Bun(options)
-        const { entry } = bun.options
+        const { root, entry } = bun.options
 
         const entryCrumb = await newCrumbFromFile(entry)
-        loadTree(entryCrumb)
+        await loadTree(entryCrumb)
 
-        // 1. scan dependency tree
-        // 2. 
-        //const dependencyTree = await bun.scanDependencyTree()
-        await bun.bundle()
         return bun
 
     }
-
-    async bundle (production = false): Promise<string> {
-
-        return await new Promise((r => r('helo')))
-    }
-
-    /* handle (req:Request) {
-        return new Response(await hotbun.bundle(), { status: 200 })
-    } */
-
-    /* async inject () {
-        //get html from entry
-        const html = await Deno.readTextFile(this.options.entry)
-        //evaluate correct path
-        const tsPath = path.join(
-            path.relative(Deno.cwd(),
-                path.dirname(
-                    path.fromFileUrl(import.meta.url))
-            ),
-            './client/client.ts')
-        //bundle script
-        const js = await bundle(tsPath)
-        //inject script
-        return injectScriptIntoHtml(html, js)
-    } */
 
     async dummy () {
         const tsPath = path.join(
@@ -87,7 +60,8 @@ class Bun {
 }
 
 const hotBunDefaultOptions = {
-    entry: './www/index.html',
+    root: './www',
+    entry: 'index.html',
     production: false,
 }
 

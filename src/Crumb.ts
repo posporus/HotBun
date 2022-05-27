@@ -5,15 +5,21 @@ import {
     findMarkupExtensionRegEx,
     findScriptExtensionRegEx,
     findStyleExtensionRegEx,
-    scriptTagSrcRegEx
+    scriptTagSrcRegEx,
+    scriptTagRegEx
 } from './regex.ts'
 import { toDataUrl } from './utility.ts'
+
+import * as path from 'https://cdn.skypack.dev/path-browserify'
+//import { path } from '../dist.ts'
 
 
 declare global {
     interface Window {
         crumbs: Map<string, Crumb>
+        Crumb: typeof Crumb
     }
+
 }
 
 export interface CrumbData {
@@ -36,22 +42,31 @@ abstract class Crumb {
     file!: string
     raw!: string
 
+    static root: string
+
     public abstract type: 'markup' | 'script' | 'style'
 
-    static get = (moduleName: string): Crumb | undefined => window.crumbs.get(moduleName)
-    
-    public static get all() : Crumb[] {
+    public abstract eval: () => void
+
+    static get = (moduleName: string): Crumb | undefined => {
+        const normal = normalizePath(moduleName)
+        console.log('Crumb request', moduleName,normal)
+        return window.crumbs.get(normal)
+    }
+
+    public static get all (): Crumb[] {
         return [...window.crumbs.values()]
     }
 
-    static set(dataArray:CrumbData[]) {
+    static set (dataArray: CrumbData[]) {
+        console.log('Crumb set', dataArray)
         dataArray.forEach((data) => {
-            if(findMarkupExtensionRegEx.test(data.file)) new Markup(data)
-            if(findScriptExtensionRegEx.test(data.file)) new Script(data)
+            if (findMarkupExtensionRegEx.test(data.file)) new Markup(data)
+            if (findScriptExtensionRegEx.test(data.file)) new Script(data)
         })
     }
-    
-    public abstract dependencies: string[]
+
+    public abstract get dependencies (): string[]
 
 
     public get data (): CrumbData {
@@ -62,11 +77,11 @@ abstract class Crumb {
         }
     }
 
+    public abstract get code (): string
 
-
-    /* public get isDeno (): boolean {
+    public get isDeno (): boolean {
         return 'Deno' in window
-    } */
+    }
 
 
 
@@ -75,11 +90,27 @@ abstract class Crumb {
 class Markup extends Crumb {
     type = 'markup' as const
 
+    constructor(data: CrumbData) {
+        super(data)
+        console.log('Markup init')
+    }
+
     public get dependencies () {
         return getScriptTagSrcUrls(this.raw)
     }
 
 
+    public get code (): string {
+        console.log('Crumb code getter', this.isDeno)
+        return replaceScriptTags(this.raw)
+    }
+
+    eval = () => {
+        //evalScripts()
+        this.dependencies.forEach(d=>{
+            window.Crumb.get(d)?.eval()
+        })
+    }
     /* public get scripts() : string {
         if(this.runtime === 'deno')
 
@@ -96,10 +127,20 @@ class Markup extends Crumb {
 class Style extends Crumb {
     type = 'style' as const
 
+    constructor(data: CrumbData) {
+        super(data)
+        console.log('Style init')
+    }
+
     public get dependencies () {
         return []
     }
 
+    public get code (): string {
+        return ''
+    }
+
+    eval = () => {}
     /* public get imports() : string {
         return 
     } */
@@ -108,6 +149,11 @@ class Style extends Crumb {
 
 class Script extends Crumb {
     type = 'script' as const
+
+    constructor(data: CrumbData) {
+        super(data)
+        console.log('Script init')
+    }
 
     public get dependencies () {
         return getImports(this.raw)
@@ -136,7 +182,7 @@ const replaceImports = (code: string) =>
         const [moduleName] = m.match(betweenQuotesRegEx) || []
         //only the imported object eg: {x,y}
         const [importObject] = m.match(importObjectRegEx) || []
-        const replacedImport = `const ${importObject} = await window.crumbs.get(${moduleName}).eval()`
+        const replacedImport = `const ${importObject} = await window.Crumb.get(${moduleName}).eval()`
         return replacedImport
     })
 
@@ -150,31 +196,62 @@ const getImports = (code: string) =>
     }
     )
 
+//@ts-ignore <Will be used in browser>
+const replaceScriptTags = (code: string) => {
+    if ('Deno' in window) {
+        console.error('DOMParser only available in Browser')
+        return code
+    }
+    //@ts-ignore
+    const parser = new DOMParser()
+    console.log(parser)
+    const doc = parser.parseFromString(code, "text/html")
+    //@ts-ignore
+    const { scripts }: { scripts: HTMLCollection } = doc
+    const scriptList = Array.from(scripts)
+
+    scriptList.forEach(script => {
+        //@ts-ignore
+        const src = script.getAttribute('src') || ''
+        const importScript = `window.Crumb.get('${src}').eval()`
+        //const importScript = 'alert("haha")'
+        //@ts-ignore
+        //script.setAttribute('src', toDataUrl(importScript))
+
+        //@ts-ignore
+        script.removeAttribute('src')
+
+        //@ts-ignore
+        //script.innerHTML = `window.Crumb.get('${src}').eval()`
+        script.innerHTML = `//${src}`
+    })
+
+    console.log(doc.scripts)
+
+
+    return doc.documentElement.innerHTML || ''
+
+    /* return code.replaceAll(scriptTagRegEx, m => {
+        const match = m.matchAll(scriptTagSrcRegEx) || []
+        const filename = [...match][0][1]
+        
+
+        const replaceWith = `<script type="module">window.crumb.get('${filename}').eval\(\)\</script>`
+        //const replaceWith = '<script>'
+        console.log('ditte', replaceWith) 
+        return m
+    }) */
+}
+
 
 const getScriptTagSrcUrls = (code: string): string[] => {
     return [...code.matchAll(scriptTagSrcRegEx)].map(src => src[1])
 }
 
-/**
- * Determines the type of a crumb from a given filename and its extension.
- * @param file 
- * @returns CrumbType
- */
-/* export const newCrumbFromExtension = (file: string | URL): Markup | Style | Script => {
-    if (typeof file !== 'string') file = file.toString()
-    if (file.endsWith('.ts')) return
-    //if (file.endsWith('.css')) return new Style()
-    //if (file.endsWith('.html')) return new Markup()
-    else throw new Error('cant get type from extension')
-} */
-
-/* const CrumbfromFile = async (file: string): Promise<Markup | Style | Script> => {
-    const crumb = newCrumbFromExtension(file)
-    crumb.file = file
-    crumb.code = await Deno.readTextFile(file)
-    return crumb
-} */
-
+const normalizePath = (file: string) => {
+    file = path.normalize(file)
+    return file
+}
 
 export {
     Crumb,
