@@ -57,7 +57,7 @@ const loadTree = (entry: Crumb) => {
 const updateCrumb = async (file:string) => {
     const crumb = window.crumbs.get(file)
 
-    console.log('update Crumb:',crumb)
+    //console.log('update Crumb:',crumb)
     if(!crumb) {
         console.log('new file detected:',file)
         return newCrumbFromFile(file)

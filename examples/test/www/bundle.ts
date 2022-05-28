@@ -11,4 +11,4 @@ import {world} from './test/hello.ts'
 //render(app, document.body);
 
 console.log('hello',world)
-//alert('hello ich bin ein otto panda pitbull bundle')
+alert('hello ich bin ein otto panda pitbull bundle')

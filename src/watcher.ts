@@ -1,7 +1,7 @@
-import {path as p }from '../dist.ts'
+import { path as p } from '../dist.ts'
 import { checksum } from './checksum.ts'
 import { cleanPath } from './cleanPath.ts'
-import { updateCrumb } from './fromFile.ts'
+import { updateCrumb, newCrumbFromFile } from './fromFile.ts'
 import { Crumb } from './Crumb.ts'
 
 /**
@@ -13,24 +13,62 @@ export const watcher = async (path: string | string[], callback: (crumb: Crumb) 
     console.log('watching for changes', path)
     const watcher = Deno.watchFs(path)
 
-    const fileList: Record<string, string> = {}
+    const fileList: Record<string, number> = {}
 
     for await (const event of watcher) {
-        event.paths.forEach(async file => {
+        //console.log(event)
+        const { kind, paths: [rawPath] } = event
+
+        const file = p.relative(Crumb.root, cleanPath(rawPath))
+        //const check = await checksum(rawPath)
+
+        const {mtime} = await Deno.stat(rawPath);
+        const time = mtime?.getTime()
+        //console.log(stat.mtime);
+
+        const hasChanged = fileList[file] !== time
+        fileList[file] = time || 0
+
+        //console.log(window.performance.now(),'filechange event',fileList[file], mtime, hasChanged)
+
+        if (kind === 'modify' && hasChanged) {
+            console.log('File has changed.', file)
+            const crumb = await updateCrumb(file)
+            if (crumb)
+                callback(crumb)
+        }
+        if (kind === 'create') {
+            console.log('File has been created.', file)
+            const crumb = await newCrumbFromFile(file)
+            if (crumb)
+                callback(crumb)
+        }
+
+        //console.log(kind, file, check)
+
+
+
+
+        /* event.paths.forEach(async file => {
             file = cleanPath(file)
             //console.log('clean',file)
             const relativeFile = p.relative(Crumb.root,file)
             //console.log('relavive',file)
 
             const check = await checksum(file)
+            console.log('CHECK:',fileList[file], check)
 
-            if (fileList[file] !== check) {
-                //console.log('file has changed.',relativeFile)
+            if (fileList[file] && fileList[file] !== check) {
+                console.log('file has changed.',relativeFile)
+                
                 const crumb = await updateCrumb(relativeFile)
+
                 if (crumb)
                     callback(crumb)
             }
             fileList[file] = check
-        })
+        }) */
     }
 }
+
+
