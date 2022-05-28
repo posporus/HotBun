@@ -16,20 +16,18 @@ export const watcher = async (path: string | string[], callback: (crumb: Crumb) 
     const fileList: Record<string, number> = {}
 
     for await (const event of watcher) {
-        //console.log(event)
         const { kind, paths: [rawPath] } = event
 
-        const file = p.relative(Crumb.root, cleanPath(rawPath))
-        //const check = await checksum(rawPath)
+        //do nothing on remove event
+        if (kind === 'remove') break
 
-        const {mtime} = await Deno.stat(rawPath);
+        const file = p.relative(Crumb.root, cleanPath(rawPath))
+
+        const { mtime } = await Deno.stat(rawPath);
         const time = mtime?.getTime()
-        //console.log(stat.mtime);
 
         const hasChanged = fileList[file] !== time
         fileList[file] = time || 0
-
-        //console.log(window.performance.now(),'filechange event',fileList[file], mtime, hasChanged)
 
         if (kind === 'modify' && hasChanged) {
             console.log('File has changed.', file)

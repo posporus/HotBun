@@ -55,12 +55,11 @@ const loadTree = (entry: Crumb) => {
 }
 
 const updateCrumb = async (file:string) => {
+    
     const crumb = window.crumbs.get(file)
 
-    //console.log('update Crumb:',crumb)
     if(!crumb) {
-        console.log('new file detected:',file)
-        return newCrumbFromFile(file)
+        throw new Error(`Failed updating Crumb. Not Found in memory. ${file}`);
     }
     const raw = await Deno.readTextFile(path.join(Crumb.root, file))
     const updated = crumb.update({file,raw})
