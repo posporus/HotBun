@@ -12,3 +12,6 @@ export const findScriptExtensionRegEx = /\.(js|ts|jsx|tsx)$/g
 export const scriptTagSrcRegEx = /<script.*?src="(.*?)"/gmi
 
 export const scriptTagRegEx = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi
+
+
+export const isUrlRegEx = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/

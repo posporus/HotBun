@@ -16,10 +16,30 @@ const handler = async (req: Request) => {
             return new Response("request isn't trying to upgrade to websocket.");
         }
 
-        socket.onopen = () => hotbun.watcher((crumb)=>{
-            crumb?.send(socket)
+        let watcher: Deno.FsWatcher
+
+        socket.addEventListener('open', () => {
+            watcher = hotbun.watcher((crumb) => {
+                try {
+                    crumb?.send(socket)
+                }
+                catch {
+                    console.error('crumb not sent.')
+                }
+            })
+            console.log('watcher on open',watcher)
+
         })
-        
+        socket.addEventListener('close', () => {
+            console.log('closing watcher')
+            if (watcher) {
+                console.log(watcher)
+                watcher.close()
+            }
+        })
+
+
+
         socket.onerror = (e) => console.log("socket errored:", e);
         socket.onclose = () => console.log("socket closed");
         return response;

@@ -1,2 +1,2 @@
-console.log(window)
+console.info('TEST')
 //hallo

@@ -9,64 +9,83 @@ import { Crumb } from './Crumb.ts'
  * @param path 
  * @param func 
  */
-export const watcher = async (path: string | string[], callback: (crumb: Crumb) => void) => {
+export const watcher = (path: string | string[], callback: (crumb: Crumb) => void) => {
     console.log('watching for changes', path)
     const watcher = Deno.watchFs(path)
 
-    const fileList: Record<string, number> = {}
+    const notifiers = new Map<string, number>();
 
+
+    const watchLoop = async () => {
+        for await (const event of watcher) {
+            const dataString = JSON.stringify(event);
+            if (notifiers.has(dataString)) {
+                clearTimeout(notifiers.get(dataString));
+                notifiers.delete(dataString);
+            }
+
+            notifiers.set(
+                dataString,
+                setTimeout(() => {
+                    // Send notification here
+                    notifiers.delete(dataString);
+
+                    handleFileChangeEvent(event, callback)
+                }, 20)
+            )
+        }
+    }
+    watchLoop()
+
+    /* const fileList: Record<string, number> = {}
+ 
     for await (const event of watcher) {
         const { kind, paths: [rawPath] } = event
-
+ 
         //do nothing on remove event
         if (kind === 'remove') break
-
+ 
         const file = p.relative(Crumb.root, cleanPath(rawPath))
-
+ 
         const { mtime } = await Deno.stat(rawPath);
         const time = mtime?.getTime()
-
+ 
         const hasChanged = fileList[file] !== time
+        console.log(hasChanged,fileList[file],time)
         fileList[file] = time || 0
-
-        if (kind === 'modify' && hasChanged) {
-            console.log('File has changed.', file)
-            const crumb = await updateCrumb(file)
-            if (crumb)
-                callback(crumb)
+ 
+ 
+        if ((kind === 'modify' && hasChanged) || kind === 'create') {
+            console.info('Filechange.',file)
+            tryUpdate(callback,file)
+        
+            
         }
-        if (kind === 'create') {
-            console.log('File has been created.', file)
-            const crumb = await newCrumbFromFile(file)
-            if (crumb)
-                callback(crumb)
-        }
+        
+ 
+    } */
+    return watcher
+}
 
-        //console.log(kind, file, check)
+const handleFileChangeEvent = (event: Deno.FsEvent, callback: (crumb: Crumb) => void) => {
+    const { kind, paths: [rawPath] } = event
+    if (kind === 'remove') return null
+    const file = p.relative(Crumb.root, cleanPath(rawPath))
 
-
-
-
-        /* event.paths.forEach(async file => {
-            file = cleanPath(file)
-            //console.log('clean',file)
-            const relativeFile = p.relative(Crumb.root,file)
-            //console.log('relavive',file)
-
-            const check = await checksum(file)
-            console.log('CHECK:',fileList[file], check)
-
-            if (fileList[file] && fileList[file] !== check) {
-                console.log('file has changed.',relativeFile)
-                
-                const crumb = await updateCrumb(relativeFile)
-
-                if (crumb)
-                    callback(crumb)
-            }
-            fileList[file] = check
-        }) */
+    if ((kind === 'modify') || kind === 'create') {
+        console.info('Filechange.', file)
+        tryUpdate(callback, file)
     }
 }
 
-
+const tryUpdate = async (callback: (crumb: Crumb) => void, file: string) => {
+    let crumb: Crumb
+    try {
+        crumb = await updateCrumb(file)
+    }
+    catch {
+        crumb = await newCrumbFromFile(file)
+    }
+    if (crumb)
+        callback(crumb)
+}

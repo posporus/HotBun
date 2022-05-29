@@ -25,6 +25,9 @@ const scriptCrumbFromFile = async (file: string) => {
     const { code, map, warnings } = await esbuild.transform(uncompiled, {
         sourcefile: file,
         format: 'esm',
+        loader:'tsx',
+        jsxFactory: 'h',
+        //jsx:'transform',
         sourcemap: 'inline',
     })
 
@@ -61,7 +64,23 @@ const updateCrumb = async (file:string) => {
     if(!crumb) {
         throw new Error(`Failed updating Crumb. Not Found in memory. ${file}`);
     }
+
     const raw = await Deno.readTextFile(path.join(Crumb.root, file))
+
+    //TODO: do this a little smarter
+    if(crumb.type === 'script') {
+        const { code, map, warnings } = await esbuild.transform(raw, {
+            sourcefile: file,
+            format: 'esm',
+            loader:'tsx',
+            jsxFactory: 'h',
+            //jsx:'transform',
+            sourcemap: 'inline',
+        })
+
+        const updated = crumb.update({file,raw:code})
+        return updated
+    }
     const updated = crumb.update({file,raw})
     return updated
 }

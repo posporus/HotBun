@@ -6,9 +6,12 @@ import {
     findScriptExtensionRegEx,
     findStyleExtensionRegEx,
     scriptTagSrcRegEx,
-    scriptTagRegEx
+    scriptTagRegEx,
+    isUrlRegEx
 } from './regex.ts'
 import { toDataUrl } from './utility.ts'
+
+import { guessType } from './guessType.ts'
 
 import * as path from 'https://cdn.skypack.dev/path-browserify'
 //import { path } from '../dist.ts'
@@ -60,7 +63,7 @@ abstract class Crumb {
 
     static get = (moduleName: string): Crumb | undefined => {
         const normal = normalizePath(moduleName)
-        console.log('Crumb request', moduleName, normal)
+        //console.log('Crumb request', moduleName, normal)
         return window.crumbs.get(normal)
     }
 
@@ -69,10 +72,13 @@ abstract class Crumb {
     }
 
     static set (dataArray: CrumbData[]) {
-        console.log('Crumb set', dataArray)
+        //console.log('Crumb set', dataArray)
         dataArray.forEach((data) => {
-            if (findMarkupExtensionRegEx.test(data.file)) new Markup(data)
-            if (findScriptExtensionRegEx.test(data.file)) new Script(data)
+            const type = guessType(data.file)
+            console.log('hello', data.file)
+            if (type === 'markup') new Markup(data)
+            if (type === 'script') new Script(data)
+            else console.log('dont know which type', data)
         })
     }
 
@@ -111,18 +117,19 @@ class Markup extends Crumb {
 
 
     public get code (): string {
-        console.log('Crumb code getter', this.isDeno)
+        //console.log('Crumb code getter', this.isDeno)
         return replaceScriptTags(this.raw)
     }
     //@ts-ignore
     eval = (doc?: Document) => {
-        console.log('eval', doc)
+        console.log('eval', this.file)
         if (doc) {
-            doc.documentElement.innerHTML=this.code
+            doc.documentElement.innerHTML = this.code
             //doc.write(this.code)
         }
         //evalScripts()
         this.dependencies.forEach(d => {
+            console.log('eval deps',d)
             window.Crumb.get(d)?.eval()
         })
     }
@@ -168,7 +175,7 @@ class Script extends Crumb {
 
     constructor(data: CrumbData) {
         super(data)
-        console.log('Script init')
+        console.log('Script init', data.file)
     }
 
     public get dependencies () {
@@ -176,10 +183,16 @@ class Script extends Crumb {
     }
 
     public get code (): string {
+
         return replaceImports(this.raw)
     }
 
-    eval = async () => await import(toDataUrl(this.code))
+    eval = async () => {
+        console.log('eval', this.file)
+        //only evals if code has changed. therefore window.performance.now()
+        //TODO: find a nicer workaround
+        return await import(toDataUrl(this.code + '\n' + (window.performance.now())))
+    }
 
 }
 
@@ -196,21 +209,41 @@ const replaceImports = (code: string) =>
     code.replaceAll(importStatementRegEx, m => {
         //only the module name eg: './square.ts' (without quotes)
         const [moduleName] = m.match(betweenQuotesRegEx) || []
+        //no Urls!
+        if (isUrlRegEx.test(moduleName)) return m
         //only the imported object eg: {x,y}
         const [importObject] = m.match(importObjectRegEx) || []
         const replacedImport = `const ${importObject} = await window.Crumb.get(${moduleName}).eval()`
         return replacedImport
     })
 
-
-//TODO: clean this mess up
 const getImports = (code: string) =>
     [...code.matchAll(importStatementRegEx)].map(importArray => {
         const i = importArray[0]
         const [list] = i.match(betweenQuotesRegEx) || []
-        return list.replace(/['"]+/g, '')
-    }
-    )
+        const imp = list.replace(/['"]+/g, '')
+        console.log('import:', imp)
+        return imp
+    }).filter(i => !isUrlRegEx.test(i))
+
+
+//TODO: clean this mess up
+/* const getImports = (code: string) =>
+    [...code.matchAll(importStatementRegEx)].reduce((res, importArray) => {
+        const i = importArray[0]
+        const [list] = i.match(betweenQuotesRegEx) || []
+        const imp = list.replace(/['"]+/g, '')
+        console.log('import:', imp, isUrlRegEx.test(imp))
+        if (!isUrlRegEx.test(imp)) {
+            console.log('importing',imp)
+            res.push(imp)
+        }
+        else {
+            console.log('not importing',imp)
+        }
+        //console.log(res)
+        return res
+    }, [] ) */
 
 //@ts-ignore <Will be used in browser>
 const replaceScriptTags = (code: string) => {
@@ -220,7 +253,7 @@ const replaceScriptTags = (code: string) => {
     }
     //@ts-ignore
     const parser = new DOMParser()
-    console.log(parser)
+    //console.log(parser)
     const doc = parser.parseFromString(code, "text/html")
     //@ts-ignore
     const { scripts }: { scripts: HTMLCollection } = doc
@@ -242,7 +275,7 @@ const replaceScriptTags = (code: string) => {
         script.innerHTML = `//${src}`
     })
 
-    console.log(doc.scripts)
+    //console.log(doc.scripts)
 
 
     return doc.documentElement.innerHTML || ''
