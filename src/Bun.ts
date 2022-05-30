@@ -31,7 +31,7 @@ class Bun {
 
     }
 
-    async dummy () {
+    /* async dummy () {
         const tsPath = path.join(
             path.relative(Deno.cwd(),
                 path.dirname(
@@ -40,6 +40,7 @@ class Bun {
             './client/client.ts')
         //bundle script
         const js = await bundle(tsPath)
+        
 
         const { all } = Crumb
         const allData = all.map(crumb => crumb.data)
@@ -56,9 +57,28 @@ class Bun {
         </head>
         </html>
         `
-    }
+    } */
 
     watcher = (callback: (crumb?:Crumb) => void) => watcher(this.options.root, callback)
+
+    async inject(file:string){
+        const html = await Deno.readTextFile(file)
+
+        const tsPath = path.join(
+            path.relative(Deno.cwd(),
+                path.dirname(
+                    path.fromFileUrl(import.meta.url))
+            ),
+            './client/client.ts')
+        //bundle script
+        const js = await bundle(tsPath)
+        //console.log(js)
+        return injectScriptIntoHtml(html,js)
+    }
+
+    async bundle(file:string) {
+
+    }
 
 }
 

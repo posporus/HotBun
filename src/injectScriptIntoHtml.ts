@@ -15,11 +15,12 @@ const injectScriptIntoHtml = (html: string, script: string) => {
     //const entry = await Deno.readTextFile(this.options.entry)
     const document = new DOMParser().parseFromString(html, 'text/html')
     if (!document) throw new Error("Document is null")
-
+    //console.log('inject',html,script)
     const scriptElement = document.createElement("script")
     scriptElement.setAttribute('type','module')
     scriptElement.textContent = script
     document.head.appendChild(scriptElement)
+    //console.log(document.documentElement?.innerHTML)
 
 
     return `

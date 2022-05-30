@@ -13,7 +13,7 @@ const defaultTypes = {
  * @param file
  * @returns 
  */
-export const guessType = (file: string, types:Record<string,string[]> = defaultTypes):keyof typeof defaultTypes | null => {
+export const guessType = (file: string, types:Record<string,string[]> = defaultTypes):keyof typeof defaultTypes => {
     let type: string | null = null
 
     const ext = file.split('.').pop()
@@ -28,6 +28,8 @@ export const guessType = (file: string, types:Record<string,string[]> = defaultT
             type = typeStrings[i]
         }
     })
+    if(!type) throw new Error(`Unknown file extension '${ext}' on file ${file}.`);
+    
 
     return type
 }

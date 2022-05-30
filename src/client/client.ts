@@ -1,11 +1,12 @@
 /// <reference lib="dom" />
-import {Crumb, Script, Markup} from '../Crumb.ts'
-import type {CrumbData} from '../Crumb.ts'
+//import {Crumb, Script, Markup} from '../Crumb.ts'
+//import type {CrumbData} from '../Crumb.ts'
 
 declare const initialCrumbs:string
-window.Crumb = Crumb
+//window.Crumb = Crumb
+console.log('hello world')
 
-document.addEventListener("DOMContentLoaded", function (event) {
+/* document.addEventListener("DOMContentLoaded", function (event) {
     const crumbData = JSON.parse(atob(initialCrumbs))
     console.log('crumbData',crumbData)
     Crumb.set(crumbData)
@@ -27,3 +28,4 @@ document.addEventListener("DOMContentLoaded", function (event) {
     
     //console.log(window.crumbs.get('./www/index.html'))
 })
+ */

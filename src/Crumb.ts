@@ -14,6 +14,7 @@ import { toDataUrl } from './utility.ts'
 import { guessType } from './guessType.ts'
 
 import * as path from 'https://cdn.skypack.dev/path-browserify'
+import { buildFromFile } from './builder.ts'
 //import { path } from '../dist.ts'
 
 
@@ -47,10 +48,10 @@ abstract class Crumb {
         return this
     }
 
-    send (ws: WebSocket) {
+    /* send (ws: WebSocket) {
         const json = JSON.stringify(this.data)
         ws.send(json)
-    }
+    } */
 
     file!: string
     raw!: string
@@ -67,11 +68,21 @@ abstract class Crumb {
         return window.crumbs.get(normal)
     }
 
+    static async fromFile (file: string) {
+        try {
+            const type = guessType(file)
+            //const code = await buildFromFile(file)
+        }
+        catch (e) {
+            console.error(e)
+        }
+    }
+
     public static get all (): Crumb[] {
         return [...window.crumbs.values()]
     }
 
-    static set (dataArray: CrumbData[]) {
+    /* static set (dataArray: CrumbData[]) {
         //console.log('Crumb set', dataArray)
         dataArray.forEach((data) => {
             const type = guessType(data.file)
@@ -80,7 +91,7 @@ abstract class Crumb {
             if (type === 'script') new Script(data)
             else console.log('dont know which type', data)
         })
-    }
+    } */
 
     public abstract get dependencies (): string[]
 
@@ -95,9 +106,9 @@ abstract class Crumb {
 
     public abstract get code (): string
 
-    public get isDeno (): boolean {
+    /* public get isDeno (): boolean {
         return 'Deno' in window
-    }
+    } */
 
 
 
@@ -129,7 +140,7 @@ class Markup extends Crumb {
         }
         //evalScripts()
         this.dependencies.forEach(d => {
-            console.log('eval deps',d)
+            console.log('eval deps', d)
             window.Crumb.get(d)?.eval()
         })
     }
