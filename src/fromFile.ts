@@ -1,93 +1,42 @@
-import { esbuild, path } from '../dist.ts'
-import { Crumb, Script, Markup, Style } from './Crumb.ts'
+import { path } from '../dist.ts'
+import { Crumb } from './Crumb.ts'
+import { getPluginRequestFromString, requestPlugin, guessPluginFromExtension } from './plugin.ts'
+import { crumbStorage } from './storeCrumbs.ts'
 import { cleanPath } from './cleanPath.ts'
 
-import {
-    importStatementRegEx,
-    betweenQuotesRegEx,
-    importObjectRegEx,
-    findMarkupExtensionRegEx,
-    findScriptExtensionRegEx,
-    findStyleExtensionRegEx
-} from './regex.ts'
 
-const newCrumbFromFile = (file: string) => {
-    //if (findScriptExtensionRegEx.test(file)) 
-    if (findMarkupExtensionRegEx.test(file)) return markupCrumpFromFile(file)
-    return scriptCrumbFromFile(file)
-}
+/**
+ * Creates a new Crumb object from a file or updates an existing one.
+ * @param file 
+ */
+export async function crumbFromFile (file: string) {
+    try {
+        //console.log('input file',file)
+        file = cleanPath(file)
+        //console.log('clean file',file)
+        const joinRoot = path.join(Crumb.root, file)
+        //console.log('file',file,'join',joinRoot)
+        const raw = await Deno.readTextFile(joinRoot)
 
-const scriptCrumbFromFile = async (file: string) => {
-    file = cleanPath(path.join(file))
-    console.log('script file', file)
-    const uncompiled = await Deno.readTextFile(path.join(Crumb.root, file))
-    //build file
-    const { code, map, warnings } = await esbuild.transform(uncompiled, {
-        sourcefile: file,
-        format: 'esm',
-        loader:'tsx',
-        jsxFactory: 'h',
-        //jsx:'transform',
-        sourcemap: 'inline',
-    })
+        const pluginRequest = getPluginRequestFromString(raw) || guessPluginFromExtension(file)
+        if (!pluginRequest) throw new Error(`Couldn't guess Plugin Type for file '${file}'.`)
 
-    if (warnings) console.warn(warnings)
+        const pluginClass = requestPlugin(pluginRequest)
+        if (!pluginClass) throw new Error(`Cannot resolve plugin '${pluginRequest}' in file ${file}.`)
 
-    const raw = code
+        //TODO: does not treats the case when CrumbType changes.
+        const crumb = crumbStorage.get(file)
+        if (crumb) {
+            return crumb.update({ file, raw })
+        }
 
-    const scriptCrumb = new Script({ raw, file })
+        const newCrumb = new pluginClass({ raw, file })
+        crumbStorage.set(file, newCrumb)
+        return newCrumb
 
-    return scriptCrumb
-}
-
-const markupCrumpFromFile = async (file: string) => {
-    file = cleanPath(file)
-    console.log('markup file', file)
-    const raw = await Deno.readTextFile(path.join(Crumb.root, file))
-    const markupCrumb = new Markup({ raw, file })
-
-    return markupCrumb
-}
-
-const loadTree = (entry: Crumb) => {
-    const dependencies = entry.dependencies
-    return Promise.all(dependencies.map(async dep => {
-        const crumb = await newCrumbFromFile(dep)
-        await loadTree(crumb)
-    }))
-}
-
-const updateCrumb = async (file:string) => {
-    
-    const crumb = window.crumbs.get(file)
-
-    if(!crumb) {
-        throw new Error(`Failed updating Crumb. Not Found in memory. ${file}`);
+    }
+    catch (e) {
+        console.error(e)
     }
 
-    const raw = await Deno.readTextFile(path.join(Crumb.root, file))
-
-    //TODO: do this a little smarter
-    if(crumb.type === 'script') {
-        const { code, map, warnings } = await esbuild.transform(raw, {
-            sourcefile: file,
-            format: 'esm',
-            loader:'tsx',
-            jsxFactory: 'h',
-            //jsx:'transform',
-            sourcemap: 'inline',
-        })
-
-        const updated = crumb.update({file,raw:code})
-        return updated
-    }
-    const updated = crumb.update({file,raw})
-    return updated
-}
-
-
-export {
-    newCrumbFromFile,
-    loadTree,
-    updateCrumb
 }

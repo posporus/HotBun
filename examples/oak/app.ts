@@ -1,24 +1,22 @@
-import { Application, Router } from './dist.ts'
-import { Bun } from '../../mod.ts'
+import { HotBun, Application, Router } from './dist.ts'
 
-const hotbun = await Bun.init()
+const hotbun = HotBun.init()
 
-const router = new Router();
+const router = new Router()
 router
     .get("/", async (context) => {
-        context.response.body = await hotbun.inject('./www/index.html')//"Hello world!";
-    })
-    /* .get("/book", (context) => {
-        context.response.body = Array.from(books.values());
-    })
-    .get("/book/:id", (context) => {
-        if (books.has(context?.params?.id)) {
-            context.response.body = books.get(context.params.id);
-        } 
-    });*/
+        if (context.isUpgradable && hotbun.dev)
+            hotbun.watch(context.upgrade())
 
-const app = new Application();
-app.use(router.routes());
-app.use(router.allowedMethods());
+        context.response.body = await hotbun.entry('./index.html')
+    })
+    .get("/test.ts", async (context) => {
+        context.response.body = await hotbun.bundle('./test.ts')
+        context.response.type = 'text/javascript'
+    })
 
-await app.listen({ port: 8000 });
+const app = new Application()
+app.use(router.routes())
+app.use(router.allowedMethods())
+
+await app.listen({ port: 8000 })

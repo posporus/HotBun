@@ -1,9 +1,2 @@
-import { Bun } from './src/Bun.ts'
-
-export declare namespace Hot {
-    export { Bun }
-}
-
-export {
-    Bun
-}
+export { HotBun } from './src/HotBun.ts'
+export type { HotBunOptions } from './src/HotBun.ts'

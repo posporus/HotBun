@@ -1,16 +1,16 @@
-import {path} from '../dist.ts'
+import { path } from '../dist.ts'
 
 export const cleanPath = (file: string) => {
-    const normalized = path.normalize(file)
-    const relative = path.relative(Deno.cwd(),normalized)
-    const isExtendedLengthPath = /^\\\\\?\\/.test(relative);
-    const hasNonAscii = /[^\u0000-\u0080]+/.test(relative);
-
+    file = path.relative(Deno.cwd(), file)
+    file = path.normalize(file)
+    const isExtendedLengthPath = /^\\\\\?\\/.test(file)
+    const hasNonAscii = /[^\u0000-\u0080]+/.test(file)
+    //file = path.join(file)
     if (isExtendedLengthPath || hasNonAscii) {
-        return relative;
+        return file;
     }
 
-    const clean  = relative.replace(/\\/g, "/");
-    return clean
+    file = file.replace(/\\/g, "/")
+    return file
 
 }
