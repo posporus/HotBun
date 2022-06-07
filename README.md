@@ -1,11 +1,14 @@
 # HotBun
 
+
 - vite like hot es module replacement but different
 - only one request per bundle
 - zero requests on updating module
 - no build step
 - dev == prod
 - using esbuild
+
+![hotbun_demo](https://user-images.githubusercontent.com/2838229/172371696-089fcccd-c09b-4886-a49b-4bc84bb23834.gif)
 
 ## Running the Example
 
