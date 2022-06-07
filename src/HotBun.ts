@@ -18,9 +18,14 @@ export class HotBun {
     static init (options?: HotBunOptions) {
 
         //setting dev env variable
-        Deno.args.find(a => a === '--dev') ?
-            Deno.env.set("HOTBUN_DEVMODE", "true")
-            : Deno.env.set("HOTBUN_DEVMODE", "false")
+        try {
+            Deno.args.find(a => a === '--dev') ?
+                Deno.env.set("HOTBUN_DEVMODE", "true")
+                : Deno.env.set("HOTBUN_DEVMODE", "false")
+        }
+        catch(e) {
+            console.warn('Could not set HOTBUN_DEVMODE.', e)
+        }
 
         console.info(`🔥 %cHotBun 🚀 initialized in ${DEVMODE() ? '%cdevelopment mode' : '%cproduction mode'}`,
             'font-weight:bold;',
