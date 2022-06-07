@@ -1,0 +1,6 @@
+{
+    "tasks": {
+        "dev": "deno run -A ./app.ts --dev",
+        "prod": "deno run --allow-read ./app.ts"
+    }
+}

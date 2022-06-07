@@ -1,14 +1,13 @@
 import { Crumb } from './Crumb.ts'
-import { crumbFromFile } from './fromFile.ts'
-//import { getTreeData } from './storeCrumbs.ts'
-import type { Plugin } from './plugin.ts'
-//import { Html } from './plugins/Html.ts'
 import { path } from '../dist.ts'
 import { cleanPath } from './cleanPath.ts'
 import { Script } from './plugins/Script.ts'
 import { injectScriptIntoHtml } from './injectScriptIntoHtml.ts'
 import { bundleFromFile } from './bundle.ts'
 import { watcher } from './watcher.ts'
+import { sendUpdate } from './messages.ts'
+import type { Plugin } from './plugin.ts'
+import DEVMODE from './devmode.ts'
 
 export class HotBun {
     options: Required<HotBunOptions>
@@ -17,6 +16,15 @@ export class HotBun {
     // STATIC
     //
     static init (options?: HotBunOptions) {
+
+        //setting dev env variable
+        Deno.args.find(a => a === '--dev') ?
+            Deno.env.set("HOTBUN_DEVMODE", "true")
+            : Deno.env.set("HOTBUN_DEVMODE", "false")
+
+        console.info(`🔥 %cHotBun 🚀 initialized in ${DEVMODE() ? '%cdevelopment mode' : '%cproduction mode'}`,
+            'font-weight:bold;',
+            `color:${DEVMODE() ? 'red' : 'green'}; font-weight:bold;`)
 
         const bun = new HotBun(options)
 
@@ -30,10 +38,12 @@ export class HotBun {
     // CONSTRUKTOR
     //
     constructor(options?: HotBunOptions) {
+
         this.options = {
             ...hotBunDefaultOptions,
             ...options
         }
+
     }
 
     async bundle (file: string): Promise<string> {
@@ -46,10 +56,10 @@ export class HotBun {
     }
 
     /**
-     * True if application is run with flag '--dev'.
+     * True if application rus in devmode. Either by setting 'HOTBUN_DEVMODE' to true or by adding '--dev' flag to run command.
      */
     public get dev (): boolean {
-        return !!Deno.args.find(a => a === '--dev')
+        return DEVMODE()
     }
 
 
@@ -58,9 +68,11 @@ export class HotBun {
             watcher(this.options.root, async fsEvent => {
                 const { kind, file } = fsEvent
                 //const file = cleanPath(rawPath)
+                //TODO: Error handling?
                 if (kind === 'modify') {
                     const crumb = await Crumb.fromFile(file)
-                    crumb?.sendUpdate(socket)
+                    if (crumb)
+                        sendUpdate(socket, crumb)
                 }
             })
         })
@@ -72,7 +84,7 @@ export class HotBun {
             file = path.join(this.options.root, file)
             let html = await Deno.readTextFile(file)
             if (this.dev) {
-                console.log('meta', import.meta.url)
+                //console.log('meta', import.meta.url)
                 const thisDir = path.dirname(import.meta.url)
 
                 const browserScriptPath = path.join(thisDir, './browser/script.ts')

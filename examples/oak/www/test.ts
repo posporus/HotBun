@@ -1,6 +1,7 @@
-import {hello} from './hello.ts'
-import {welt} from './welt.ts'
-console.log(welt)
-const test:string | number = 'hopp'
-console.log('hello', hello)
-console.log('hello belo', test)
+/// <reference lib="dom" />
+import { App } from './home.tsx'
+import { h, Component, render } from "https://esm.sh/preact@10.7.2"
+
+console.log('hey i am the test script')
+
+render(App(), document.body);

@@ -19,6 +19,8 @@ export const watcher = (path: string, callback: (data: { file: string, kind: 'mo
         for await (const event of watcher) {
             const dataString = JSON.stringify(event);
             if (notifiers.has(dataString)) {
+
+                //Workaround to make sure only one event is fired
                 clearTimeout(notifiers.get(dataString));
                 notifiers.delete(dataString);
             }
@@ -32,7 +34,7 @@ export const watcher = (path: string, callback: (data: { file: string, kind: 'mo
                     const file = p.relative(path, cleanPath(rawPath))
                     if (kind === 'modify' || kind === 'remove')
                         callback({ file, kind })
-                }, 20)
+                }, 50)
             )
         }
     }

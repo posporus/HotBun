@@ -1,9 +1,12 @@
 import { installedPlugins } from './plugin.ts'
-import type { Plugin } from './plugin.ts'
 import { crumbFromFile } from './fromFile.ts'
-import type { UpdateMessage } from './browser/message.ts'
 import { MessageType } from './browser/message.ts'
 import { crumbStorage } from './storeCrumbs.ts'
+import type { Plugin } from './plugin.ts'
+import type { UpdateMessage } from './browser/message.ts'
+import {path} from '../dist.ts'
+
+import {CrumbPath} from './CrumbPath.ts'
 
 
 export abstract class Crumb {
@@ -40,7 +43,9 @@ export abstract class Crumb {
 
     }
 
-    file!: string
+    path!:CrumbPath
+
+    //file!: string
     raw!: string
     /**
      * Sets raw data and filename of Crumb.
@@ -48,27 +53,37 @@ export abstract class Crumb {
      * @returns 
      */
     update ({ raw, file }: CrumbData) {
+
+        this.path = new CrumbPath(file)
+        //path.parse()
+
         this.raw = raw
-        this.file = file
+        //this.file = file
         return this
     }
 
-    async sendUpdate (socket: WebSocket) {
-        const file = this.file
-        const data = await this.pack()
-        const message: UpdateMessage = {
-            type: MessageType.UPDATE,
-            file,
-            data
-        }
-        socket.send(JSON.stringify(message))
+    /**
+     * the filepath relative to the root folder and with '/' slashes and without './'
+     */
+    public get file() : string {
+        return this.path.cleanPath
     }
+    
 
+
+    /**
+     * Bundle the crumb the HotBun way.
+     */
     public abstract bundle (): Promise<string>
 
-    //public abstract pack (): Promise<Pack>
+    /**
+     * Pack everything up for delivery to browser.
+     */
     public abstract pack (): Promise<Pack>
 
+    /**
+     * Any dependency files as an array.
+     */
     public abstract get dependencies (): string[]
 
     /**
@@ -93,7 +108,10 @@ export abstract class Crumb {
 }
  */
 
-export type Pack = string
+export type Pack = {
+    code:string,
+    dependencies:string[]
+}
 export interface CrumbData {
     raw: string
     file: string

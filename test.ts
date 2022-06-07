@@ -1,6 +1,13 @@
-export const isUrlRegEx = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/
-const test = isUrlRegEx.test('https://cdn.skypack.dev/preact')
-test
+import * as css from "https://deno.land/x/css@0.3.0/mod.ts";
 
-const test2 = isUrlRegEx.test('https://cdn.skypack.dev/preact')
-test2
+const ast = css.parse(`
+body {
+  background: #eee;
+  color: #888;
+}
+`);
+
+const [body] = ast.stylesheet.rules;
+const [background] = body.declarations;
+
+console.log(JSON.stringify(background, undefined, "  "));

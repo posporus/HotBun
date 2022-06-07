@@ -2,19 +2,21 @@ import { esbuild } from '../../dist.ts'
 import { Crumb } from '../Crumb.ts'
 import { cleanPath } from '../cleanPath.ts'
 import { getTreeData } from '../storeCrumbs.ts'
-
+import DEVMODE from '../devmode.ts'
 export class Script extends Crumb {
     static extensions = ['js', 'ts', 'jsx', 'tsx']
 
     async build () {
         //compile script
         const { code, warnings, map } = await esbuild.transform(this.raw, {
-            loader: 'ts',
-            sourcefile:this.file,
-            sourcemap:'inline'
+            loader: 'tsx',
+            jsxFactory: 'h',
+            sourcefile: this.file,
+            sourcemap: (DEVMODE() ? 'inline' : false)
         })
         //replace imports
         const replaced = replaceImports(code)
+        //console.log('replaced:', replaced)
         //pack
 
         return replaced
@@ -22,9 +24,8 @@ export class Script extends Crumb {
 
     async pack () {
         const code = await this.build()
-        const dataUrl = toDataUrl(code)
-        const name = this.file
-        return dataUrl
+        const dependencies = this.dependencies
+        return { code, dependencies }
     }
 
     public get dependencies (): string[] {
@@ -35,16 +36,14 @@ export class Script extends Crumb {
     async bundle () {
         const crumbs = await getTreeData(this.file)
         if (!crumbs) return 'failed'
-        //const entries = Object.entries(crumbs)
         const json = JSON.stringify(crumbs)
-        const base64 = btoa(json)
-        //const crumbDataUrl = toDataUrl(json)
-        //console.log('base64', base64, 'atob', atob(base64))
-        const initScript = `
+        //
+        /* const initScript = `
             window.crumbs = ${json}
-            window.eval = (crumbName) => import(window.crumbs[crumbName])
+            window.eval = (crumbName) => import("data:text/javascript;base64," + btoa(window.crumbs[crumbName] + '//'+window.performance.now()))
             window.eval('${this.file}')
-        `
+        ` */
+        const initScript = `window.crumbs=${json},window.eval=a=>import("data:text/javascript;base64,"+btoa(window.crumbs[a].code+"//"+window.performance.now())),window.eval("${this.file}")`
         return initScript
     }
 
@@ -77,7 +76,7 @@ const replaceImports = (code: string) =>
     code.replaceAll(importStatementRegEx, m => {
         //only the module name eg: './square.ts' (without quotes)
         const [moduleName] = m.match(betweenQuotesRegEx) || []
-        const cleanModuleName = cleanPath(moduleName.replaceAll('"',''))
+        const cleanModuleName = cleanPath(moduleName.replaceAll('"', ''))
         //console.log(`moduleMame ${moduleName}, cleanModuleName ${cleanModuleName}`)
         //no Urls!
         if (isUrlRegEx.test(moduleName)) return m
@@ -87,18 +86,6 @@ const replaceImports = (code: string) =>
         return replacedImport
     })
 
-
-/* const packScript = (code: string) => {
-    const dataUrl = toDataUrl(code)
-    const pack = {
-        dataUrl: dataUrl,
-        
-        eval(){
-            return import(this.dataUrl)
-        }
-    }
-    return pack
-} */
 
 const toDataUrl = (text: string) =>
     "data:text/javascript;base64," + btoa(text)

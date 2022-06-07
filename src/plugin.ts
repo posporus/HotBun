@@ -8,7 +8,7 @@ export type Plugin = (new (data: CrumbData) => Crumb) & {
 }
 
 /**
- * Extraxts the plugin request (a word) written after '@hotBun' from a given string.
+ * Extraxts the plugin request (a word) written after '@hotBun' from a string.
  * @param code 
  * @returns 
  */

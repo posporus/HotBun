@@ -3,20 +3,20 @@ import { Crumb } from './Crumb.ts'
 import { getPluginRequestFromString, requestPlugin, guessPluginFromExtension } from './plugin.ts'
 import { crumbStorage } from './storeCrumbs.ts'
 import { cleanPath } from './cleanPath.ts'
+import { CrumbPath } from './CrumbPath.ts'
+
 
 
 /**
  * Creates a new Crumb object from a file or updates an existing one.
- * @param file 
+ * @param file path from project root
  */
 export async function crumbFromFile (file: string) {
     try {
-        //console.log('input file',file)
-        file = cleanPath(file)
-        //console.log('clean file',file)
-        const joinRoot = path.join(Crumb.root, file)
-        //console.log('file',file,'join',joinRoot)
-        const raw = await Deno.readTextFile(joinRoot)
+        const crumbPath = new CrumbPath(file)
+        
+        //console.log('file', file)
+        const raw = await Deno.readTextFile(crumbPath.relativeToProject)
 
         const pluginRequest = getPluginRequestFromString(raw) || guessPluginFromExtension(file)
         if (!pluginRequest) throw new Error(`Couldn't guess Plugin Type for file '${file}'.`)
@@ -36,7 +36,7 @@ export async function crumbFromFile (file: string) {
 
     }
     catch (e) {
-        console.error(e)
+        console.error(file, e)
     }
 
 }
