@@ -11,8 +11,8 @@
 ![hotbun_demo](https://user-images.githubusercontent.com/2838229/172371696-089fcccd-c09b-4886-a49b-4bc84bb23834.gif)
 
 ## ToDo
-[] making css work
-[] SSR
+- [ ] making css work
+- [ ] SSR
 
 ## Running the Example
 
