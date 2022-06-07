@@ -16,7 +16,7 @@
 
 ## Running the Example
 
-The example uses the oak as server framework.
+The example uses oak as a server framework.
 ```sh
 cd ./examples/oak
 # dev mode
