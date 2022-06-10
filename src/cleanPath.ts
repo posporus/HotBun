@@ -5,7 +5,6 @@ export const cleanPath = (file: string) => {
     file = path.normalize(file)
     const isExtendedLengthPath = /^\\\\\?\\/.test(file)
     const hasNonAscii = /[^\u0000-\u0080]+/.test(file)
-    //file = path.join(file)
     if (isExtendedLengthPath || hasNonAscii) {
         return file;
     }

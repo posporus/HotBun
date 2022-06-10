@@ -1,4 +1,3 @@
-import { Crumb } from './Crumb.ts'
 import { cleanPath } from './cleanPath.ts'
 import { path as p } from '../dist.ts'
 
@@ -42,14 +41,3 @@ export const watcher = (path: string, callback: (data: { file: string, kind: 'mo
 
     return watcher
 }
-
-/* const handleFileChangeEvent = (event: Deno.FsEvent, callback: (crumb: Crumb) => void) => {
-    const { kind, paths: [rawPath] } = event
-    if (kind === 'remove') return null
-    const file = p.relative(Crumb.root, cleanPath(rawPath))
-
-    if (kind === 'modify') {
-        console.info('Filechange.', file)
-        tryUpdate(callback, file)
-    }
-} */

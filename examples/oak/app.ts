@@ -3,7 +3,7 @@ import { HotBun, Application, Router } from './dist.ts'
 const hotbun = HotBun.init()
 
 //prebundle
-const bundle = await hotbun.bundle('./test.ts')
+const bundle = await hotbun.bundle('./my-bundle.ts')
 
 const router = new Router()
 
@@ -16,7 +16,7 @@ router
         context.response.body = await hotbun.entry('./index.html')
     })
     //route script
-    .get("/test.ts", (context) => {
+    .get("/my-bundle.ts", (context) => {
         context.response.body = bundle
         context.response.type = 'text/javascript'
     })

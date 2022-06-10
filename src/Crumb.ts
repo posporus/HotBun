@@ -1,12 +1,8 @@
 import { installedPlugins } from './plugin.ts'
 import { crumbFromFile } from './fromFile.ts'
-import { MessageType } from './browser/message.ts'
 import { crumbStorage } from './storeCrumbs.ts'
-import type { Plugin } from './plugin.ts'
-import type { UpdateMessage } from './browser/message.ts'
-import {path} from '../dist.ts'
-
 import {CrumbPath} from './CrumbPath.ts'
+import type { Plugin } from './plugin.ts'
 
 
 export abstract class Crumb {
@@ -34,7 +30,6 @@ export abstract class Crumb {
 
         this.update(data)
 
-        //if (!window.crumbs) window.crumbs = new Map()
         crumbStorage.set(this.file, this)
 
         console.info(`Registered Crumb >>${this.constructor.name}<< '${this.file}'`)
@@ -53,12 +48,8 @@ export abstract class Crumb {
      * @returns 
      */
     update ({ raw, file }: CrumbData) {
-
         this.path = new CrumbPath(file)
-        //path.parse()
-
         this.raw = raw
-        //this.file = file
         return this
     }
 
@@ -102,11 +93,6 @@ export abstract class Crumb {
     }
 
 }
-
-/* export interface CrumbBrowserData {
-    file:
-}
- */
 
 export type Pack = {
     code:string,

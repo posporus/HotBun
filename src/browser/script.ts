@@ -22,7 +22,7 @@ const socket = new WebSocket('ws://localhost:8000')
 socket.addEventListener('message', e => {
     const message: HotBunMessage = JSON.parse(e.data)
     if (isUpdate(message)) {
-        console.log('update', message)
+        console.log('update', message.file)
 
         const { file, code, dependencies } = message
 
@@ -54,6 +54,3 @@ const isError = (message: HotBunMessage): message is ErrorMessage => {
 const isRemove = (message: HotBunMessage): message is RemoveMessage => {
     return message.type === MessageType.REMOVE
 }
-
-//findEntry
-

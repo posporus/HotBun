@@ -16,9 +16,7 @@ export class Script extends Crumb {
         })
         //replace imports
         const replaced = replaceImports(code)
-        //console.log('replaced:', replaced)
         //pack
-
         return replaced
     }
 
@@ -59,7 +57,6 @@ const getImports = (code: string) =>
         const i = importArray[0]
         const [list] = i.match(betweenQuotesRegEx) || []
         const imp = list.replace(/['"]+/g, '')
-        //console.log('import:', imp)
         return imp
     }).filter(i => !isUrlRegEx.test(i))
 
@@ -77,7 +74,6 @@ const replaceImports = (code: string) =>
         //only the module name eg: './square.ts' (without quotes)
         const [moduleName] = m.match(betweenQuotesRegEx) || []
         const cleanModuleName = cleanPath(moduleName.replaceAll('"', ''))
-        //console.log(`moduleMame ${moduleName}, cleanModuleName ${cleanModuleName}`)
         //no Urls!
         if (isUrlRegEx.test(moduleName)) return m
         //only the imported object eg: {x,y}
@@ -85,7 +81,3 @@ const replaceImports = (code: string) =>
         const replacedImport = `const ${importObject} = await window.eval('${cleanModuleName}')`
         return replacedImport
     })
-
-
-const toDataUrl = (text: string) =>
-    "data:text/javascript;base64," + btoa(text)

@@ -1,6 +1,7 @@
 import type { CrumbData } from './script.ts'
 /**
  * recursively determines the crumbs that have no more importers (no other crumbs are importing this crumb)
+ * aka the entry points
  * @param crumbs 
  * @param name 
  * @returns 
@@ -34,7 +35,6 @@ const getImportersFromCrumblist = (crumbsArray: { file: string, dependencies: st
     const importers:string[] = []
     crumbsArray.forEach(({ dependencies,file }) => {
         if(dependencies.find(d => d === crumbName)) importers.push(file)
-        
     })
     return importers
 }

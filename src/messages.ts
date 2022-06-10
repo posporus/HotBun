@@ -17,9 +17,7 @@ export const sendUpdate = (socket: WebSocket, crumb: Crumb) => {
             dependencies
         }
         shipMessage(socket, message)
-    })/* .catch(err=>{
-        //
-    }) */
+    })
 }
 /**
  * Sends a remove message to the browser.
